@@ -3,53 +3,85 @@ require "ostruct" # for OpenStruct below
 
 # Most of Rule functionality is tested in Ability specs
 describe CanCan::Rule do
-  before(:each) do
-    @conditions = {}
-    @rule = CanCan::Rule.new(true, :read, :integers, @conditions)
+  subject(:rule) { CanCan::Rule.new(base_behavior, action, rsubject, conditions) }
+
+  let(:base_behavior) { true }
+  let(:action) { :read }
+  let(:rsubject) { :integers }
+  let(:conditions) { {} }
+
+  describe '#associations_hash' do
+
+    context 'when association joins is empty' do
+      it { expect(rule.associations_hash).to be_empty }
+    end
+
+    context 'when association joins is nil' do
+      let(:conditions) { nil }
+      it { expect(rule.associations_hash).to be_empty }
+    end
+
+    context 'when association joins contains just attributes' do
+      let(:conditions) { {foo: :bar} }
+      it { expect(rule.associations_hash).to be_empty }
+    end
+
+    context 'when association joins contains a single association' do
+      let(:conditions) { {foo: {bar: 1}} }
+      it { expect(rule.associations_hash).to eq({foo: {}}) }
+    end
+
+    context 'when association joins contains multiple associations' do
+      let(:conditions) { {foo: {bar: 1}, test: {1 => 2}} }
+      it { expect(rule.associations_hash).to eq({foo: {}, test: {}}) }
+    end
+
+    context 'when association joins contains nested associations' do
+      let(:conditions) { {foo: {bar: {1 => 2}}} }
+      it { expect(rule.associations_hash).to eq({foo: {bar: {}}}) }
+    end
+
   end
 
-  it "returns no association joins if none exist" do
-    @rule.associations_hash.should == {}
+  describe '#specificity' do
+
+    shared_examples 'specificity' do
+
+      let(:specificity_value) { base_behavior ? 1 : 3 }
+      let(:higher_specificity_value) { base_behavior ? 2 : 4 }
+
+      it { expect(rule.specificity).to eq(specificity_value) }
+
+      describe 'should have higher specificity' do
+
+        context 'when associations exist' do
+          let(:conditions) { {foo: :bar} }
+          it { expect(rule.specificity).to eq(higher_specificity_value) }
+        end
+
+        context 'when attributes exist' do
+          let(:conditions) { :foo }
+          it { expect(rule.specificity).to eq(higher_specificity_value) }
+        end
+
+      end
+
+    end
+
+    context 'when base behaviour is true' do
+      it_behaves_like 'specificity'
+    end
+
+    context 'when base behaviour is false' do
+      let(:base_behavior) { false }
+      it_behaves_like 'specificity'
+    end
+
   end
 
-  it "returns no association for joins if just attributes" do
-    @conditions[:foo] = :bar
-    @rule.associations_hash.should == {}
-  end
-
-  it "returns single association for joins" do
-    @conditions[:foo] = {:bar => 1}
-    @rule.associations_hash.should == {:foo => {}}
-  end
-
-  it "returns multiple associations for joins" do
-    @conditions[:foo] = {:bar => 1}
-    @conditions[:test] = {1 => 2}
-    @rule.associations_hash.should == {:foo => {}, :test => {}}
-  end
-
-  it "returns nested associations for joins" do
-    @conditions[:foo] = {:bar => {1 => 2}}
-    @rule.associations_hash.should == {:foo => {:bar => {}}}
-  end
-
-  it "returns no association joins if conditions is nil" do
-    rule = CanCan::Rule.new(true, :read, :integers)
-    rule.associations_hash.should == {}
-  end
-
-  it "has higher specificity for attributes/conditions" do
-    CanCan::Rule.new(true, :read, :integers).specificity.should eq(1)
-    CanCan::Rule.new(true, :read, :integers, :foo => :bar).specificity.should eq(2)
-    CanCan::Rule.new(true, :read, :integers, :foo).specificity.should eq(2)
-    CanCan::Rule.new(false, :read, :integers).specificity.should eq(3)
-    CanCan::Rule.new(false, :read, :integers, :foo => :bar).specificity.should eq(4)
-    CanCan::Rule.new(false, :read, :integers, :foo).specificity.should eq(4)
-  end
-
-  it "should not be mergeable if conditions are not simple hashes" do
-    meta_where = OpenStruct.new(:name => 'metawhere', :column => 'test')
-    @conditions[meta_where] = :bar
-    @rule.should be_unmergeable
+  context 'when conditions are not simple hashes' do
+    let(:meta_where) { OpenStruct.new(:name => 'metawhere', :column => 'test') }
+    let(:conditions) { {meta_where => :bar} }
+    it { expect(rule).to be_unmergeable }
   end
 end
