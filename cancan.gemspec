@@ -10,7 +10,7 @@ Gem::Specification.new do |s|
   s.files        = Dir["{lib,spec}/**/*", "[A-Z]*", "init.rb"] - ["Gemfile.lock"]
   s.require_path = "lib"
 
-  s.add_development_dependency "rspec", "~> 2.9.0"
+  s.add_development_dependency "rspec", "~> 3.1.0"
   s.add_development_dependency "rails", "~> 3.2.6"
   s.add_development_dependency "sqlite3", "~> 1.3.5"
 
