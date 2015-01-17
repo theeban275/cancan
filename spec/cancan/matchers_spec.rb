@@ -9,7 +9,6 @@ describe '#be_able_to' do
   let(:can_value) { true }
 
   describe 'delegates to can?' do
-
     before do
       expect(object).to be_able_to(ability, *args)
     end
@@ -26,15 +25,19 @@ describe '#be_able_to' do
 
   end
 
-  describe 'reports a nice failure message' do
+  describe 'fails' do
 
-    context 'when expected to be able to on object that cannot' do
+    context 'when can? expected on object that cannot' do
       let(:can_value) { false }
-      it { expect{ expect(object).to be_able_to(ability, *args) }.to raise_error("expected to be able to :#{ability} #{first_arg}") }
+      it 'should report nice error' do
+        expect{ expect(object).to be_able_to(ability, *args) }.to raise_error("expected to be able to :#{ability} #{first_arg}")
+      end
     end
 
-    context 'when not expected to be able to object that can' do
-      it { expect{ expect(object).not_to be_able_to(ability, *args) }.to raise_error("expected not to be able to :#{ability} #{first_arg}") }
+    context 'when can? not expected on object that can' do
+      it 'should report nice error' do
+        expect{ expect(object).not_to be_able_to(ability, *args) }.to raise_error("expected not to be able to :#{ability} #{first_arg}")
+      end
     end
 
   end

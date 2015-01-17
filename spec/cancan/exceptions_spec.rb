@@ -1,58 +1,79 @@
 require "spec_helper"
 
 describe CanCan::Unauthorized do
-  describe "with action and subject" do
-    before(:each) do
-      @exception = CanCan::Unauthorized.new(nil, :some_action, :some_subject)
+  subject(:exception) { CanCan::Unauthorized.new(some_message, some_action, some_subject) }
+
+  let(:default_message) { "You are not authorized to access this page." }
+  let(:some_message) { nil }
+  let(:some_action) { nil }
+  let(:some_subject) { nil }
+
+  shared_examples CanCan::Unauthorized do
+    describe '#action' do
+      it { expect(exception.action).to eq(some_action) }
     end
 
-    it "has action and subject accessors" do
-      @exception.action.should == :some_action
-      @exception.subject.should == :some_subject
+    describe '#subject' do
+      it { expect(exception.subject).to eq(some_subject) }
     end
 
-    it "has a changable default message" do
-      @exception.message.should == "You are not authorized to access this page."
-      @exception.default_message = "Unauthorized!"
-      @exception.message.should == "Unauthorized!"
-    end
-  end
-
-  describe "with only a message" do
-    before(:each) do
-      @exception = CanCan::Unauthorized.new("Access denied!")
-    end
-
-    it "has nil action and subject" do
-      @exception.action.should be_nil
-      @exception.subject.should be_nil
-    end
-
-    it "has passed message" do
-      @exception.message.should == "Access denied!"
+    describe '#message' do
+      it { expect(exception.message).to eq(some_message.nil? ? default_message : some_message) }
     end
   end
 
-  describe "i18n in the default message" do
+  context 'with action, subject and no message' do
+    subject(:exception) { CanCan::Unauthorized.new(nil, some_action, some_subject) }
+
+    let(:some_action) { :some_action }
+    let(:some_subject) { :some_subject }
+
+    it_behaves_like CanCan::Unauthorized
+
+    context 'when default message changed' do
+      let(:default_message) { 'Unauthorized!' }
+
+      before do
+        exception.default_message = default_message
+      end
+
+      it 'should be use changed default message' do
+        expect(exception.message).to eq(default_message)
+      end
+    end
+
+  end
+
+  context 'with only a message' do
+    let(:some_message) { "Access denied!" }
+    let(:some_action) { nil }
+    let(:some_subject) { nil }
+
+    it_behaves_like CanCan::Unauthorized
+  end
+
+  context 'when i18n in the default message' do
+    let(:translation) { "This is a different message" }
+
+    before do
+      I18n.backend.store_translations :en, :unauthorized => {:default => translation }
+    end
+
     after(:each) do
       I18n.backend = nil
     end
 
-    it "uses i18n for the default message" do
-      I18n.backend.store_translations :en, :unauthorized => {:default => "This is a different message"}
-      @exception = CanCan::Unauthorized.new
-      @exception.message.should == "This is a different message"
+    it 'should use i18n translation' do
+      expect(exception.message).to eq(translation)
     end
 
-    it "defaults to a nice message" do
-      @exception = CanCan::Unauthorized.new
-      @exception.message.should == "You are not authorized to access this page."
+    context 'when has message' do
+      let(:some_message) { "Hey! You're not welcome here" }
+
+      it 'should use message' do
+       expect(exception.message).to eq(some_message)
+      end
     end
 
-    it "does not use translation if a message is given" do
-      @exception = CanCan::Unauthorized.new("Hey! You're not welcome here")
-      @exception.message.should == "Hey! You're not welcome here"
-      @exception.message.should_not == "You are not authorized to access this page."
-    end
   end
 end

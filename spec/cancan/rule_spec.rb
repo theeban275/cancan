@@ -47,31 +47,39 @@ describe CanCan::Rule do
 
     shared_examples 'specificity' do
 
-      it { expect(rule.specificity).to eq(specificity_value) }
+      context 'when no associations' do
+        it { expect(rule.specificity).to eq(specificity_value) }
+      end
 
-      describe 'should have higher specificity' do
+      context 'when associations exist' do
+        let(:conditions) { {foo: :bar} }
 
-        context 'when associations exist' do
-          let(:conditions) { {foo: :bar} }
-          it { expect(rule.specificity).to eq(higher_specificity_value) }
+        it 'should be higher' do
+          expect(rule.specificity).to be > specificity_value
         end
 
-        context 'when attributes exist' do
-          let(:conditions) { :foo }
-          it { expect(rule.specificity).to eq(higher_specificity_value) }
+        it { expect(rule.specificity).to eq(higher_specificity_value) }
+      end
+
+      context 'when attributes exist' do
+        let(:conditions) { :foo }
+
+        it 'should be higher' do
+          expect(rule.specificity).to be > specificity_value
         end
 
+        it { expect(rule.specificity).to eq(higher_specificity_value) }
       end
 
     end
 
-    context 'when base behaviour is true' do
+    context 'with base behaviour' do
       let(:specificity_value) { 1 }
       let(:higher_specificity_value) { 2 }
       it_behaves_like 'specificity'
     end
 
-    context 'when base behaviour is false' do
+    context 'without base behaviour' do
       let(:base_behavior) { false }
       let(:specificity_value) { 3 }
       let(:higher_specificity_value) { 4 }
