@@ -23,8 +23,6 @@ describe CanCan::Unauthorized do
   end
 
   context 'with action, subject and no message' do
-    subject(:exception) { CanCan::Unauthorized.new(nil, some_action, some_subject) }
-
     let(:some_action) { :some_action }
     let(:some_subject) { :some_subject }
 
@@ -46,8 +44,6 @@ describe CanCan::Unauthorized do
 
   context 'with only a message' do
     let(:some_message) { "Access denied!" }
-    let(:some_action) { nil }
-    let(:some_subject) { nil }
 
     it_behaves_like CanCan::Unauthorized
   end
