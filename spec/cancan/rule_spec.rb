@@ -47,9 +47,6 @@ describe CanCan::Rule do
 
     shared_examples 'specificity' do
 
-      let(:specificity_value) { base_behavior ? 1 : 3 }
-      let(:higher_specificity_value) { base_behavior ? 2 : 4 }
-
       it { expect(rule.specificity).to eq(specificity_value) }
 
       describe 'should have higher specificity' do
@@ -69,11 +66,15 @@ describe CanCan::Rule do
     end
 
     context 'when base behaviour is true' do
+      let(:specificity_value) { 1 }
+      let(:higher_specificity_value) { 2 }
       it_behaves_like 'specificity'
     end
 
     context 'when base behaviour is false' do
       let(:base_behavior) { false }
+      let(:specificity_value) { 3 }
+      let(:higher_specificity_value) { 4 }
       it_behaves_like 'specificity'
     end
 
